@@ -28,15 +28,15 @@ jobs:
       - name: Push to Docker Hub
         run: docker push $IMAGE_NAME:latest
 
-      - name: Trivy Scan
-        uses: aquasecurity/trivy-action@0.33.1
-        with:
-        image-ref: $IMAGE_NAME:$IMAGE_TAG
-        format: table
-        exit-code: '1'
-        ignore-unfixed: true
-        vuln-type: 'os,library'
-        severity: 'HIGH,CRITICAL'
+- name: Trivy Scan
+  uses: aquasecurity/trivy-action@0.33.1
+  with:
+    image-ref: ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
+    format: table
+    exit-code: 1
+    ignore-unfixed: true
+    vuln-type: os,library
+    severity: HIGH,CRITICAL
 
       - name: Login to Private Registry
         run: echo ${{ secrets.PRIVATE_REGISTRY_PASSWORD }} | docker login $REGISTRY_URL -u ${{ secrets.PRIVATE_REGISTRY_USERNAME }} --password-stdin
