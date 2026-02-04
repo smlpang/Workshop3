@@ -11,6 +11,7 @@ jobs:
     env:
       IMAGE_NAME: your-dockerhub-username/llm-python
       REGISTRY_URL: your-private-registry.com
+      IMAGE_TAG: ${{ github.sha }}
 
     steps:
       - name: Checkout repo
@@ -23,25 +24,25 @@ jobs:
           password: ${{ secrets.DOCKERHUB_PASSWORD }}
 
       - name: Build Docker image
-        run: docker build -t $IMAGE_NAME:latest ./llm-python
+        run: docker build -t ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }} ./llm-python
+
+      - name: Trivy Scan
+        uses: aquasecurity/trivy-action@0.33.1
+        with:
+          image-ref: ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
+          format: table
+          exit-code: 1
+          ignore-unfixed: true
+          vuln-type: os,library
+          severity: HIGH,CRITICAL
 
       - name: Push to Docker Hub
-        run: docker push $IMAGE_NAME:latest
-
-- name: Trivy Scan
-  uses: aquasecurity/trivy-action@0.33.1
-  with:
-    image-ref: ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
-    format: table
-    exit-code: 1
-    ignore-unfixed: true
-    vuln-type: os,library
-    severity: HIGH,CRITICAL
+        run: docker push ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
 
       - name: Login to Private Registry
-        run: echo ${{ secrets.PRIVATE_REGISTRY_PASSWORD }} | docker login $REGISTRY_URL -u ${{ secrets.PRIVATE_REGISTRY_USERNAME }} --password-stdin
+        run: echo ${{ secrets.PRIVATE_REGISTRY_PASSWORD }} | docker login ${{ env.REGISTRY_URL }} -u ${{ secrets.PRIVATE_REGISTRY_USERNAME }} --password-stdin
 
       - name: Push to Private Registry
         run: |
-          docker tag $IMAGE_NAME:latest $REGISTRY_URL/llm-python:latest
-          docker push $REGISTRY_URL/llm-python:latest
+          docker tag ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }} ${{ env.REGISTRY_URL }}/llm-python:${{ env.IMAGE_TAG }}
+          docker push ${{ env.REGISTRY_URL }}/llm-python:${{ env.IMAGE_TAG }}
