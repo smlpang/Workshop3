@@ -26,3 +26,4 @@ ENV OLLAMA_API_KEY="c2f916de66c04c729cf98a25c93abe56._U5Dy3DoDf1RQ9BG936-yC4R"
 
 # Command to run the FastAPI app using uvicorn
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8080"]
+
