@@ -1,0 +1,42 @@
+name: LLM-Python CI/CD
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    env:
+      IMAGE_NAME: your-dockerhub-username/llm-python
+      REGISTRY_URL: your-private-registry.com
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_PASSWORD }}
+
+      - name: Build Docker image
+        run: docker build -t $IMAGE_NAME:latest ./llm-python
+
+      - name: Push to Docker Hub
+        run: docker push $IMAGE_NAME:latest
+
+      - name: Trivy Scan
+        uses: aquasecurity/trivy-action@v0.11.0
+        with:
+          image-ref: $IMAGE_NAME:latest
+
+      - name: Login to Private Registry
+        run: echo ${{ secrets.PRIVATE_REGISTRY_PASSWORD }} | docker login $REGISTRY_URL -u ${{ secrets.PRIVATE_REGISTRY_USERNAME }} --password-stdin
+
+      - name: Push to Private Registry
+        run: |
+          docker tag $IMAGE_NAME:latest $REGISTRY_URL/llm-python:latest
+          docker push $REGISTRY_URL/llm-python:latest
